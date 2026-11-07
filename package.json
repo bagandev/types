@@ -1,0 +1,47 @@
+{
+  "name": "@bagandev/types",
+  "version": "0.1.0",
+  "description": "Types for Bagan",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "types": "dist/index.d.cts",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "susee build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bagandev/types.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/bagandev/types/issues"
+  },
+  "homepage": "https://github.com/bagandev/types#readme",
+  "devDependencies": {
+    "liquidjs": "^10.30.1",
+    "susee": "^3.0.0",
+    "typescript": "^7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/**/*",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ]
+}
