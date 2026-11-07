@@ -733,12 +733,16 @@ interface BasePlugin {
 
 export interface MarkdownPlugin extends BasePlugin {
   type: "markdown";
-  fun: (...args: any[]) => Plugin;
+  fun: (config: Record<string, unknown>) => Plugin;
 }
 
 export interface LiquidPlugin extends BasePlugin {
   type: "liquid";
-  fun: (...args: any[]) => (liquid: Liquid) => void;
+  fun: (config: Record<string, unknown>) => (liquid: Liquid) => void;
 }
 
-export type BaganPlugin = MarkdownPlugin | LiquidPlugin;
+export type BaganPluginFectory = (
+  ...args: any[]
+) => MarkdownPlugin | LiquidPlugin;
+
+export type BaganPlugin = MarkdownPlugin | LiquidPlugin | BaganPluginFectory;
