@@ -1,6 +1,6 @@
 {
   "name": "@bagandev/types",
-  "version": "0.1.1",
+  "version": "0.1.11",
   "description": "Types for Bagan",
   "type": "module",
   "main": "dist/index.cjs",

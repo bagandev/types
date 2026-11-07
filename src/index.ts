@@ -738,7 +738,9 @@ export interface MarkdownPlugin extends BasePlugin {
 
 export interface LiquidPlugin extends BasePlugin {
   type: "liquid";
-  fun: (config: Record<string, unknown>) => (liquid: Liquid) => void;
+  fun: (
+    config: Record<string, unknown>,
+  ) => (this: Liquid, L: typeof Liquid) => void;
 }
 
 export type BaganPluginFectory = (
