@@ -2,6 +2,8 @@ import { Liquid } from "liquidjs";
 
 export const PackageName = "BaganDev";
 
+// Generated from ci.yml
+// napi-rs helper types
 export type PeisarEmphasisLevel = "Italic" | "Bold";
 export type PeisarTableCellAlignment = "Default" | "Left" | "Center" | "Right";
 export type PeisarTableCellAlignments = PeisarTableCellAlignment[];
@@ -12,6 +14,213 @@ export type BaganHostingProvider =
   | "Netlify"
   | "CloudflarePages"
   | "Custom";
+
+/**
+ * Which binding artifact the generated loader actually loaded: `'native'` for
+ * a native addon, otherwise the `platformArchABI` of the WASI flavor. Every
+ * flavor napi-rs can build is listed, because `NAPI_RS_NATIVE_LIBRARY_PATH`
+ * can point the loader at a WASI artifact this package does not build itself.
+ */
+export declare const __napiBindingTarget:
+  | "native"
+  | "wasm32-wasi"
+  | "wasm32-wasip1";
+
+/**
+ * In-memory + archive-backed cache of the Markdown and asset files under a
+ * directory tree.
+ *
+ * Memory is the source of truth for hot content; a background worker
+ * flushes a binary shard archive to `.peisar-cache` for cold/large
+ * entries, front-ended by the `map.json` search index. Watchers keep the
+ * memory tier in sync with the filesystem.
+ */
+export declare class BaganCache {
+  /**
+   * JS: `new BaganCache(entryDir?, assetsDir?, options?)`.
+   *
+   * `options` configures the theme, Markdown parsing (`fragment`, GFM,
+   * …), archive thresholds, hosting resolution, and output directories.
+   * In theme mode `options.themeConfig` is the theme package's default
+   * export (`themeConfigObject`); the caller is expected to `require`
+   * (or import) the theme package and pass the export through. Register
+   * custom visitors and parser hooks afterwards with `usePlugin()`.
+   */
+  constructor(
+    entryDir?: string | undefined | null,
+    assetsDir?: string | undefined | null,
+    options?: BaganCacheJsOptions | undefined | null,
+  );
+  /**
+   * JS: `BaganCache.withConfigJs(config)` — full configuration form,
+   * including memory-tier budgets. Liquid collections may be
+   * configured through `liquidCollections`, but `liquidRender` is only
+   * available on the constructor (the `withConfig` object cannot carry
+   * functions across the boundary) — use `useLiquidRender()` to
+   * register the callback afterwards.
+   */
+  static withConfigJs(config: BaganCacheConfig): BaganCache;
+  /**
+   * Register a JavaScript plugin applied to every page render
+   * (JS: `cache.usePlugin({ visitBlock, visitInline, parseBlock, parseInline })`).
+   */
+  usePlugin(plugin: Plugin): void;
+  /**
+   * JS: `cache.useLiquidRender(cb)` — register the JavaScript function
+   * that renders a Liquid collection file to a page
+   * (`liquidRender(file: string) => PageObject`). The callback
+   * extracts the front matter, renders the Liquid content to HTML,
+   * and returns the page fields (converted leniently — `html` is the
+   * meaningful field, anything else falls back to the raw front
+   * matter); the cache fills the path-derived fields (fileName,
+   * slug, outFilePath, inputFilePath) and `raw` itself. Called on
+   * the JS main thread every time `liquids()` / `getLiquid()` builds
+   * a [`LiquidObject`]; a callback that throws or returns nothing
+   * leaves the front-matter fields empty and `html` as the raw
+   * template. Also accepts the callback through the constructor
+   * option `liquidRender`.
+   */
+  useLiquidRender(render: (file: string) => PageObject): void;
+  /**
+   * JS: `cache.startWatchingJs()` — start watching the entry (and
+   * assets) directories recursively; errors surface as JS exceptions.
+   *
+   * While watching is active this holds a strong (ref'd) threadsafe
+   * function on the Node event loop, so a plain script that only calls
+   * `startWatchingJs()` keeps running until `dispose()` (or process
+   * exit) stops the watcher. Without it, the native watcher thread is
+   * invisible to libuv and Node exits as soon as the script ends.
+   */
+  startWatchingJs(): void;
+  /**
+   * JS: `cache.getText(absPath)` — cached text of a file, or `null`.
+   * Reads fall through to the archive tier for evicted entries.
+   */
+  getText(absPath: string): string | null;
+  /**
+   * JS: `cache.getBinary(absPath)` — cached bytes of a binary asset, or
+   * `null`. Reads fall through to the archive tier.
+   */
+  getBinary(absPath: string): Array<number> | null;
+  /**
+   * JS: `cache.listFiles()` — absolute paths of everything cached
+   * (memory + archive tiers).
+   */
+  listFiles(): Array<string>;
+  /**
+   * JS: `cache.markdownFiles()` — absolute paths of cached markdown
+   * files (either tier).
+   */
+  markdownFiles(): Array<string>;
+  /**
+   * Accepted Markdown layouts discovered from the theme's `.html`
+   * templates, sorted by name.
+   *
+   * JS: `cache.markdownLayouts()`.
+   */
+  markdownLayouts(): Array<string>;
+  /**
+   * Absolute paths to the configured theme's layouts, assets, and data
+   * directories.
+   */
+  themeDirs(): ThemeDirs;
+  /**
+   * JS: `cache.assetFiles()` — absolute paths of cached non-markdown,
+   * non-liquid files (either tier).
+   */
+  assetFiles(): Array<string>;
+  /**
+   * JS: `cache.pages()` — every page object, for Liquid themes
+   * (`{{ page.title }}`, `{{ page.layout }}`, …).
+   */
+  pages(): Array<PageObject>;
+  /**
+   * JS: `cache.getPage(inputPath)` — a single page object by absolute
+   * input path, or `null`.
+   */
+  getPage(inputPath: string): PageObject | null;
+  /** JS: `cache.assets()` — every asset object. */
+  assets(): Array<AssetsObject>;
+  /**
+   * JS: `cache.getAsset(inputPath)` — a single asset object by absolute
+   * input path, or `null`.
+   */
+  getAsset(inputPath: string): AssetsObject | null;
+  /**
+   * JS: `cache.liquids()` — every liquid object for the configured
+   * `liquidCollections`: front-matter fields from the JS-side
+   * `liquidRender(file)` callback (which also renders the HTML),
+   * path-derived fields from the cache.
+   */
+  liquids(): Array<LiquidObject>;
+  /**
+   * JS: `cache.getLiquid(inputPath)` — a single liquid object by
+   * absolute input path, or `null`.
+   */
+  getLiquid(inputPath: string): LiquidObject | null;
+  /**
+   * JS: `cache.liquidFiles()` — absolute paths of the tracked liquid
+   * template files (either tier).
+   */
+  liquidFiles(): Array<string>;
+  /**
+   * Absolute path to the configured theme package — or, in local
+   * mode (no `theme` configured), the entry directory the local
+   * theme directories resolve from.
+   */
+  themePath(): string;
+  /** Parsed theme metadata exposed as an object to Rust and JavaScript. */
+  themeConfig(): BaganThemeConfig;
+  /**
+   * JS: `cache.archived()` — absolute paths flushed to the disk
+   * archive. Everything not listed still lives in memory only.
+   */
+  archived(): Array<string>;
+  /**
+   * JS: `cache.mapJson()` — the current `map.json` document (path →
+   * shard location + metadata, including front matter for search).
+   */
+  mapJson(): string;
+  /**
+   * JS: `cache.flush()` — write all pending archive entries now,
+   * blocking until the worker is done.
+   */
+  flush(): void;
+  /**
+   * JS: `cache.baseUrl()` — the resolved base URL path prefix for the
+   * configured hosting (e.g. `/repo/` for a GitHub Pages project site).
+   */
+  baseUrl(): string;
+  /**
+   * JS: `cache.resolveUrl(path)` — prefix a site-relative path with the
+   * resolved base URL: `resolveUrl("docs/intro")` → `/repo/docs/intro`.
+   */
+  resolveUrl(path: string): string;
+  /**
+   * JS: `cache.siteUrl()` — absolute origin URL for canonical URLs, or
+   * `null` when not configured.
+   */
+  siteUrl(): string | null;
+  /**
+   * JS: `cache.onChange(cb)` — invoke `cb(event)` on every file change the
+   * watcher detects while watching is active. Returns a subscription id
+   * that can be passed to `offChange(id)`.
+   *
+   * The callback is wrapped in a `ThreadsafeFunction` because notify
+   * events fire on the watcher thread, not the JS main thread.
+   */
+  onChange(callback: (event: CacheChangeEvent) => void): number;
+  /** JS: `cache.offChange(id)` — remove a previously registered callback. */
+  offChange(id: number): void;
+  /**
+   * JS: `cache.dispose()` — stop the watcher, flush pending archive
+   * writes, and drop JS change callbacks. Safe to call more than once.
+   *
+   * Rust consumers do not need this: dropping the [`BaganCache`] stops
+   * the watcher, flushes the archive, and joins the workers.
+   */
+  dispose(): void;
+}
 
 /** Flush thresholds for the disk-archive tier. */
 export interface ArchiveConfig {
@@ -49,6 +258,93 @@ export interface AssetsObject {
 }
 
 /**
+ * Cache-wide configuration: directories, markdown options, memory/archive
+ * budgets, hosting/baseUrl resolution, and the build output directory.
+ */
+export interface BaganCacheConfig {
+  /**
+   * Entry directory holding the markdown files (absolute, or relative
+   * to the current working directory). Defaults to the current directory.
+   */
+  entryDir?: string;
+  /**
+   * Optional assets directory, resolved from the current working
+   * directory and required to be inside `entry_dir`.
+   */
+  assetsDir?: string;
+  /**
+   * Theme package name (Jekyll-gem style). When set, the theme is
+   * resolved from `node_modules/<theme>` and its default export is
+   * read as the theme configuration. When unset, the site is local:
+   * the theme directories below are resolved from the entry
+   * directory instead.
+   */
+  theme?: string;
+  /**
+   * Local layouts directory (used when `theme` is unset), resolved
+   * from the entry directory. Defaults to `_layouts`.
+   */
+  themeLayoutsDir?: string;
+  /**
+   * Local includes directory (used when `theme` is unset), resolved
+   * from the entry directory. Defaults to `_includes`.
+   */
+  themeIncludesDir?: string;
+  /**
+   * Local assets directory (used when `theme` is unset), resolved
+   * from the entry directory. Defaults to `_assets`.
+   */
+  themeAssetsDir?: string;
+  /**
+   * Local data directory (used when `theme` is unset), resolved from
+   * the entry directory. Defaults to `_data`.
+   */
+  themeDataDir?: string;
+  /**
+   * Theme configuration object (`themeConfigObject`). In theme mode
+   * the napi constructor loads it automatically from the theme
+   * package's default export; pass it explicitly to skip the
+   * automatic load (required for pure-Rust consumers, which have no
+   * JS runtime to evaluate the export). Ignored when `theme` is unset.
+   */
+  themeConfig?: BaganThemeConfig;
+  /**
+   * Markdown parsing/rendering options applied to every page render
+   * (GFM/Kramdown toggles, `fragment`, title, …). Custom visitors and
+   * parser hooks are registered separately via `usePlugin()`.
+   */
+  markdown?: PeisarOptions;
+  /**
+   * Memory-tier budgets (LRU eviction). Defaults: 64 MiB bytes,
+   * unlimited entries.
+   */
+  memory?: MemoryConfig;
+  /** Disk-archive tier thresholds. Defaults: 8 MiB shards, 2 s flush. */
+  archive?: ArchiveConfig;
+  /** Static-hosting baseUrl resolution (GitHub Pages/Vercel/…). */
+  hosting?: HostingConfig;
+  /**
+   * Build output directory used for `outFilePath` fields (default
+   * `".bagan"`).
+   */
+  outDir?: string;
+  /**
+   * Archive directory, relative to the current working directory
+   * (default `".peisar-cache"`).
+   */
+  cacheDir?: string;
+  /**
+   * Liquid (`.html`) collections inside the entry directory: each
+   * entry is a directory (flattened recursively) or a single file,
+   * resolved against the entry directory. The discovered files are
+   * cached as text, watched for changes, and exposed as
+   * [`LiquidObject`](crate::LiquidObject) values. Entries outside the
+   * entry directory are rejected at construction.
+   */
+  liquidCollections?: Array<string>;
+}
+
+/**
  * JS-side options accepted by the `BaganCache` constructor (a flattened
  * subset of [`BaganCacheConfig`]; memory budgets only apply through the
  * `withConfig` factory).
@@ -57,27 +353,28 @@ export interface BaganCacheJsOptions {
   /**
    * Theme package name (Jekyll-gem style), resolved from
    * `node_modules/<theme>`. Omit (null/undefined) for a local site:
-   * the theme directories below are then resolved from the cwd.
+   * the theme directories below are then resolved from the entry
+   * directory.
    */
   theme?: string;
   /**
-   * Local layouts directory (local mode only), relative to the cwd.
-   * Defaults to `_layouts`.
+   * Local layouts directory (local mode only), relative to the entry
+   * directory. Defaults to `_layouts`.
    */
   themeLayoutsDir?: string;
   /**
-   * Local includes directory (local mode only), relative to the cwd.
-   * Defaults to `_includes`.
+   * Local includes directory (local mode only), relative to the entry
+   * directory. Defaults to `_includes`.
    */
   themeIncludesDir?: string;
   /**
    * Local theme assets directory (local mode only), relative to the
-   * cwd. Defaults to `_assets`.
+   * entry directory. Defaults to `_assets`.
    */
   themeAssetsDir?: string;
   /**
-   * Local data directory (local mode only), relative to the cwd.
-   * Defaults to `_data`.
+   * Local data directory (local mode only), relative to the entry
+   * directory. Defaults to `_data`.
    */
   themeDataDir?: string;
   /**
@@ -96,6 +393,28 @@ export interface BaganCacheJsOptions {
   outDir?: string;
   /** Disk-archive directory. */
   cacheDir?: string;
+  /**
+   * Liquid (`.html`) collections inside the entry directory: each
+   * entry is a directory (flattened recursively) or a single file,
+   * resolved against the entry directory. The discovered files are
+   * cached as text, watched, and exposed through `cache.liquids()`.
+   */
+  liquidCollections?: Array<string>;
+  /**
+   * JavaScript function that renders a Liquid collection file to a
+   * page (`liquidRender(file: string) => PageObject`). The
+   * callback extracts the YAML front matter from the raw file,
+   * renders the Liquid content to HTML, and returns the page fields
+   * (the object is converted leniently — `html` is the meaningful
+   * field, anything else falls back to the raw front matter); the
+   * cache fills the path-derived fields (fileName, slug,
+   * outFilePath, inputFilePath) and `raw`. Invoked on the JS main
+   * thread when liquid objects are built; a callback that throws or
+   * returns nothing leaves the front-matter fields empty and `html`
+   * as the raw template. Registerable later with `useLiquidRender()`
+   * as well.
+   */
+  liquidRender?: (file: string) => PageObject;
 }
 
 /**
@@ -192,6 +511,61 @@ export interface HostingConfig {
   pathPrefix?: string;
 }
 
+/**
+ * A Liquid (`.html`) template tracked through one of the configured
+ * `liquidCollections` directories/files. The template carries YAML front
+ * matter like a markdown file; the JS-side `liquidRender(file)` callback
+ * extracts the front matter, renders the Liquid content to HTML, and
+ * returns the front-matter fields, so the object shares the
+ * [`PageObject`] shape with markdown pages.
+ *
+ * Front-matter-derived fields (`layout`, `title`, `summary`, `tags`,
+ * `publishDate`, `extra`) come from the callback's returned object
+ * (falling back to the raw front matter when no callback is
+ * configured); path-derived fields (`fileName`, `slug`, `outFilePath`,
+ * `inputFilePath`) are computed by the cache.
+ */
+export interface LiquidObject {
+  /**
+   * Layout name from front matter (e.g. `default`, `page`, `post`);
+   * `"default"` when front matter does not set one.
+   */
+  layout: string;
+  /** File name without extension (`foo.html` → `foo`). */
+  fileName: string;
+  /**
+   * Request URL for the rendered file (`docs/foo.html` → `/docs/foo`);
+   * the `html` extension is stripped and the resolved baseUrl is
+   * prefixed.
+   */
+  slug: string;
+  /** Raw file content (front matter + Liquid template, UTF-8 text). */
+  raw: string;
+  /**
+   * HTML rendered from the Liquid content by the JS-side
+   * `liquidRender(file)` callback. Empty when no callback is
+   * configured.
+   */
+  html: string;
+  /** Build output path (`path/to/foo.html` → `outDir/path/to/foo.html`). */
+  outFilePath: string;
+  /** Original absolute source path (watch-process identity). */
+  inputFilePath: string;
+  /** Page title from front matter. */
+  title?: string;
+  /** Short description from front matter. */
+  summary?: string;
+  /** Category tags from front matter. */
+  tags?: Array<string>;
+  /** Publication date from front matter (string form `yyyy-mm-dd`). */
+  publishDate?: string;
+  /**
+   * Any extra front-matter keys not mapped to a named field, exposed
+   * verbatim (as strings) so themes can render `{{ page.custom }}`.
+   */
+  extra?: Record<string, string>;
+}
+
 /** LRU budgets for the memory tier. */
 export interface MemoryConfig {
   /**
@@ -255,6 +629,54 @@ export interface ThemeDirs {
   dataDir: string;
   /** Directory containing the theme's HTML includes files. */
   includesDir: string;
+}
+
+/**
+ * Parses one Markdown document and exposes its AST, HTML, and front matter
+ * to JavaScript.
+ *
+ * Construct this class with the Markdown source and an optional
+ * [`PeisarOptions`] object. Properties are computed from the source document;
+ * accessing `ast`, `html`, or `astJson` also applies registered visitors.
+ */
+export declare class Peisar {
+  /**
+   * Creates a parser for `rawMd`.
+   *
+   * When `options` is omitted, GFM and Kramdown parsing are enabled and
+   * `html` returns a complete HTML document.
+   */
+  constructor(rawMd: string, options?: PeisarOptions | undefined | null);
+  /**
+   * Gets the parsed Markdown document as a JavaScript AST object.
+   *
+   * Registered visitors run before the AST is returned. The returned value
+   * is a clone, so reading this property does not consume the parser state.
+   */
+  get ast(): Document;
+  /**
+   * Registers a unified JavaScript plugin.
+   *
+   * The plugin can provide `visitBlock` / `visitInline` visitor callbacks
+   * and `parseBlock` / `parseInline` parser hooks, all in one object.
+   * Visitor callbacks receive their node as a one-item tuple: for example,
+   * `visitBlock([block]) { return { recurse: true }; }`.
+   */
+  use(plugin: Plugin): void;
+  /**
+   * Renders the parsed Markdown as HTML using the configured render options.
+   *
+   * Registered visitors run before rendering.
+   */
+  get html(): string;
+  /** Gets the deserialized YAML front matter, or `null` when none exists. */
+  get frontmatter(): any | null;
+  /**
+   * Gets the parsed Markdown AST serialized as JSON.
+   *
+   * Registered visitors run before serialization.
+   */
+  get astJson(): string;
 }
 
 /**
@@ -322,6 +744,11 @@ export interface PeisarOptions {
   style?: string;
 }
 
+export declare function renderDocumentHtml(
+  doc: Document,
+  opts?: RenderOptions | undefined | null,
+): string;
+
 /** Options that control how the AST is rendered to HTML. */
 export interface RenderOptions {
   /**
@@ -357,6 +784,12 @@ export interface RenderOptions {
    */
   style?: string;
 }
+
+/**
+ * Markdown source parsed into an AST, with optional YAML front matter and
+ * registered plugins.
+ */
+export declare class PeisarAst {}
 
 /**
  * Options that control how Markdown is parsed.
@@ -733,18 +1166,19 @@ interface BasePlugin {
 
 export interface MarkdownPlugin extends BasePlugin {
   type: "markdown";
-  fun: (config: Record<string, unknown>) => Plugin;
+  fun: (config: Record<string, unknown>, cache: BaganCache) => Plugin;
 }
 
 export interface LiquidPlugin extends BasePlugin {
   type: "liquid";
   fun: (
     config: Record<string, unknown>,
+    cache: BaganCache,
   ) => (this: Liquid, L: typeof Liquid) => void;
 }
 
-export type BaganPluginFectory = (
+export type BaganPluginFactory = (
   ...args: any[]
 ) => MarkdownPlugin | LiquidPlugin;
 
-export type BaganPlugin = MarkdownPlugin | LiquidPlugin | BaganPluginFectory;
+export type BaganPlugin = MarkdownPlugin | LiquidPlugin | BaganPluginFactory;
